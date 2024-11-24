@@ -1,0 +1,116 @@
+//7.Write a program to check whether a given system is in safe state or not using Banker’s Deadlock Avoidance algorithm.
+
+#include <stdio.h>
+
+int n, m;  // `n` is the number of processes, `m` is the number of resource types
+
+void calculateNeed(int need[n][m], int max[n][m], int alloc[n][m]) {
+    // Calculate the need matrix as `Need[i][j] = Max[i][j] - Allocation[i][j]`
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            need[i][j] = max[i][j] - alloc[i][j];
+        }
+    }
+}
+
+int isSafe(int processes[], int avail[], int max[][m], int alloc[][m]) {
+    int need[n][m];
+    calculateNeed(need, max, alloc);
+
+    // Mark all processes as not finished initially
+    int finish[n];
+    for (int i = 0; i < n; i++) {
+        finish[i] = 0;
+    }
+
+    // To store the safe sequence
+    int safeSeq[n];
+
+    // Copy the available resources into a work array
+    int work[m];
+    for (int i = 0; i < m; i++) {
+        work[i] = avail[i];
+    }
+
+    // Find a process that can be executed
+    int count = 0;
+    while (count < n) {
+        int found = 0;
+        for (int i = 0; i < n; i++) {
+            if (finish[i] == 0) {  // If process is not finished
+                int j;
+                for (j = 0; j < m; j++) {
+                    if (need[i][j] > work[j]) {
+                        break;
+                    }
+                }
+
+                // If all resources for this process can be allocated
+                if (j == m) {
+                    // Allocate resources for this process
+                    for (int k = 0; k < m; k++) {
+                        work[k] += alloc[i][k];
+                    }
+                    safeSeq[count++] = processes[i];
+                    finish[i] = 1;
+                    found = 1;
+                }
+            }
+        }
+
+        // If no process was found in this pass, system is in an unsafe state
+        if (found == 0) {
+            printf("System is not in a safe state\n");
+            return 0;
+        }
+    }
+
+    // If we reach here, then system is in a safe state
+    printf("System is in a safe state.\nSafe sequence is: ");
+    for (int i = 0; i < n; i++) {
+        printf("%d ", safeSeq[i]);
+    }
+    printf("\n");
+
+    return 1;
+}
+
+int main() {
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+
+    printf("Enter number of resource types: ");
+    scanf("%d", &m);
+
+    int processes[n];
+    for (int i = 0; i < n; i++) {
+        processes[i] = i;
+    }
+
+    int alloc[n][m], max[n][m], avail[m];
+
+    printf("Enter the allocation matrix:\n");
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            scanf("%d", &alloc[i][j]);
+        }
+    }
+
+    printf("Enter the max matrix:\n");
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            scanf("%d", &max[i][j]);
+        }
+    }
+
+    printf("Enter the available resources:\n");
+    for (int i = 0; i < m; i++) {
+        scanf("%d", &avail[i]);
+    }
+
+    // Check if the system is in a safe state
+    isSafe(processes, avail, max, alloc);
+
+    return 0;
+}
+
