@@ -1,0 +1,110 @@
+//3 System calls
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+// Function prototypes for sorting algorithms
+void bubbleSort(int arr[], int n);
+void insertionSort(int arr[], int n);
+
+int main() {
+    int n;
+    
+    // Get number of elements
+    printf("Enter the number of elements: ");
+    scanf("%d", &n);
+    
+    int arr[n];
+    
+    // Get array elements
+    printf("Enter %d integers:\n", n);
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &arr[i]);
+    }
+
+    pid_t pid = fork(); // Create a child process
+
+    if (pid < 0) {
+        perror("Fork failed"); // Handle fork failure
+        exit(1);
+    } 
+    else if (pid == 0) {
+        // Child process
+        printf("\nChild process (PID: %d) is sorting the array using insertion sort.\n", getpid());
+        insertionSort(arr, n); // Child sorts using insertion sort
+
+        // Print sorted array by child
+        printf("Child process sorted array: ");
+        for (int i = 0; i < n; i++) {
+            printf("%d ", arr[i]);
+        }
+        printf("\nChild process exiting.\n");
+        exit(0); // Child exits
+    } 
+    else {
+        // Parent process waits 2 seconds
+        sleep(2);
+        
+        // Parent sorts using bubble sort
+        printf("\nParent process (PID: %d) is sorting the array using bubble sort.\n", getpid());
+        bubbleSort(arr, n);
+        
+        // Print sorted array by parent
+        printf("Parent process sorted array: ");
+        for (int i = 0; i < n; i++) {
+            printf("%d ", arr[i]);
+        }
+        printf("\n");
+
+        // Parent waits for child to finish
+        int status;
+        wait(&status);
+        printf("\nParent process detected child process termination.\n");
+
+        // Create orphan process
+        if (fork() == 0) {
+            printf("\nOrphan child process (PID: %d), parent PID: %d\n", getpid(), getppid());
+            sleep(5); // Orphan process sleeps for 5 seconds
+            printf("Orphan child process (PID: %d) now adopted by init (PID: %d)\n", getpid(), getppid());
+            exit(0);
+        }
+        
+        // Parent process exits
+        printf("Parent process exiting.\n");
+        exit(0);
+    }
+
+    return 0;
+}
+
+// Bubble sort implementation
+void bubbleSort(int arr[], int n) {
+    for (int i = 0; i < n-1; i++) {
+        for (int j = 0; j < n-i-1; j++) {
+            if (arr[j] > arr[j+1]) {
+                int temp = arr[j];
+                arr[j] = arr[j+1];
+                arr[j+1] = temp;
+            }
+        }
+    }
+}
+
+// Insertion sort implementation
+void insertionSort(int arr[], int n) {
+    for (int i = 1; i < n; i++) {
+        int key = arr[i];
+        int j = i - 1;
+
+        // Move elements of arr[0..i-1], that are greater than key, to one position ahead
+        // of their current position
+        while (j >= 0 && arr[j] > key) {
+            arr[j + 1] = arr[j];
+            j = j - 1;
+        }
+        arr[j + 1] = key;
+    }
+}
+
