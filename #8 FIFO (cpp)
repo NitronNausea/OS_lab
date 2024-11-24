@@ -1,0 +1,59 @@
+//8 FIFO
+#include <iostream>
+#include <queue>
+#include <unordered_set>
+using namespace std;
+
+void calculateFIFOPageFaults(int pages[], int n, int capacity) {
+    unordered_set<int> memory;
+    queue<int> pageQueue;
+    int pageFaults = 0;
+
+    cout << "\nStep-by-step memory state:\n";
+    for (int i = 0; i < n; i++) {
+        int currentPage = pages[i];
+
+        if (memory.find(currentPage) == memory.end()) {
+            pageFaults++;
+
+            if (memory.size() == capacity) {
+                int oldestPage = pageQueue.front();
+                pageQueue.pop();
+                memory.erase(oldestPage);
+            }
+
+            memory.insert(currentPage);
+            pageQueue.push(currentPage);
+        }
+
+        cout << "Step " << i + 1 << " - Memory: ";
+        queue<int> tempQueue = pageQueue;
+        while (!tempQueue.empty()) {
+            cout << tempQueue.front() << " ";
+            tempQueue.pop();
+        }
+        cout << endl;
+    }
+
+    cout << "\nTotal Page Faults: " << pageFaults << endl;
+}
+
+int main() {
+    int n, capacity;
+
+    cout << "Enter the number of pages: ";
+    cin >> n;
+
+    int pages[n];
+    cout << "Enter the page reference sequence:\n";
+    for (int i = 0; i < n; i++) {
+        cin >> pages[i];
+    }
+
+    cout << "Enter the capacity of memory (number of frames): ";
+    cin >> capacity;
+
+    calculateFIFOPageFaults(pages, n, capacity);
+
+    return 0;
+}
