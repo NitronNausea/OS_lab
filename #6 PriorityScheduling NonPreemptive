@@ -1,0 +1,72 @@
+//6. NonPreemptivePriorityScheduling
+package os;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Scanner;
+
+class Process {
+    int pid; // Process ID
+    int burstTime; // Burst Time
+    int completionTime; // Completion Time
+    int priority; // Priority
+    int waitingTime; // Waiting Time
+    int turnaroundTime; // Turnaround Time
+
+    Process(int pid, int burstTime, int priority) {
+        this.pid = pid;
+        this.burstTime = burstTime;
+        this.priority = priority;
+        this.completionTime = 0;
+        this.waitingTime = 0;
+        this.turnaroundTime = 0;
+    }
+}
+
+public class NonPreemptivePriorityScheduling {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        System.out.print("Enter number of processes: ");
+        int n = sc.nextInt();
+
+        List<Process> processes = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            System.out.print("Enter burst time for process " + (i + 1) + ": ");
+            int burstTime = sc.nextInt();
+            System.out.print("Enter priority for process " + (i + 1) + ": ");
+            int priority = sc.nextInt();
+            processes.add(new Process(i + 1, burstTime, priority));
+        }
+        sc.close();
+        
+        // Sort processes based on priority (lower number indicates higher priority)
+        processes.sort(Comparator.comparingInt(p -> p.priority));
+
+        // Calculate waiting, turnaround, and completion times
+        int totalWaitingTime = 0;
+        int totalTurnaroundTime = 0;
+        int currentTime = 0;
+        for (Process currentProcess : processes) {
+            currentProcess.waitingTime = currentTime;
+            currentTime += currentProcess.burstTime;
+            currentProcess.turnaroundTime = currentTime;
+            currentProcess.completionTime = currentTime;
+
+            totalWaitingTime += currentProcess.waitingTime;
+            totalTurnaroundTime += currentProcess.turnaroundTime;
+        }
+
+        // Print results with improved formatting
+        System.out.println("\nPID\tBurst Time\tPriority\tCompletion Time\tWaiting Time\tTurnaround Time");
+        for (Process process : processes) {
+            System.out.printf("%d\t\t%d\t\t%d\t\t%d\t\t\t%d\t\t%d\n",
+                process.pid, process.burstTime, process.priority, process.completionTime, process.waitingTime, process.turnaroundTime);
+        }
+
+        System.out.println("\nAverage Waiting Time: " + (double) totalWaitingTime / n);
+        System.out.println("Average Turnaround Time: " + (double) totalTurnaroundTime / n);
+    }
+}
+
