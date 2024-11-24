@@ -1,0 +1,116 @@
+//6.PreemptivePriorityScheduling
+package os;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+class Process {
+    int pid; // Process ID
+    int burstTime; // Burst Time
+    int remainingTime; // Remaining Burst Time
+    int priority; // Priority
+    int arrivalTime; // Arrival Time
+    int completionTime; // Completion Time
+    int waitingTime; // Waiting Time
+    int turnaroundTime; // Turnaround Time
+
+    Process(int pid, int burstTime, int priority, int arrivalTime) {
+        this.pid = pid;
+        this.burstTime = burstTime;
+        this.remainingTime = burstTime;
+        this.priority = priority;
+        this.arrivalTime = arrivalTime;
+        this.completionTime = 0;
+        this.waitingTime = 0;
+        this.turnaroundTime = 0;
+    }
+}
+
+public class PreemptivePriorityScheduling {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        System.out.print("Enter number of processes: ");
+        int n = sc.nextInt();
+
+        List<Process> processes = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            System.out.print("Enter burst time for process " + (i + 1) + ": ");
+            int burstTime = sc.nextInt();
+            System.out.print("Enter priority for process " + (i + 1) + ": ");
+            int priority = sc.nextInt();
+            System.out.print("Enter arrival time for process " + (i + 1) + ": ");
+            int arrivalTime = sc.nextInt();
+            processes.add(new Process(i + 1, burstTime, priority, arrivalTime));
+        }
+        sc.close();
+
+        // Simulate the execution of processes
+        int currentTime = 0;
+        int completedProcesses = 0;
+        Process currentProcess = null;
+        List<Process> readyQueue = new ArrayList<>();
+
+        while (completedProcesses < n) {
+            // Add processes that have arrived to the ready queue
+            for (Process p : processes) {
+                if (p.arrivalTime <= currentTime && p.remainingTime > 0 && !readyQueue.contains(p)) {
+                    readyQueue.add(p);
+                }
+            }
+
+            // Sort the ready queue by priority (lower number = higher priority)
+            readyQueue.sort((p1, p2) -> {
+                if (p1.priority != p2.priority) {
+                    return Integer.compare(p1.priority, p2.priority);
+                } else {
+                    // If two processes have the same priority, select based on arrival time
+                    return Integer.compare(p1.arrivalTime, p2.arrivalTime);
+                }
+            });
+
+            // Select the process with the highest priority (first in the list)
+            if (!readyQueue.isEmpty()) {
+                currentProcess = readyQueue.get(0);
+            }
+
+            // If there is a process to execute, decrement its remaining time
+            if (currentProcess != null) {
+                currentProcess.remainingTime--;
+                currentTime++;
+
+                // If the process finishes execution
+                if (currentProcess.remainingTime == 0) {
+                    currentProcess.completionTime = currentTime;
+                    currentProcess.turnaroundTime = currentProcess.completionTime - currentProcess.arrivalTime;
+                    currentProcess.waitingTime = currentProcess.turnaroundTime - currentProcess.burstTime;
+                    completedProcesses++;
+                    readyQueue.remove(currentProcess);
+                    currentProcess = null;
+                }
+            } else {
+                // If no process is ready, increment the current time
+                currentTime++;
+            }
+        }
+
+        // Calculate total waiting and turnaround times
+        int totalWaitingTime = 0;
+        int totalTurnaroundTime = 0;
+        for (Process p : processes) {
+            totalWaitingTime += p.waitingTime;
+            totalTurnaroundTime += p.turnaroundTime;
+        }
+
+        // Print results
+        System.out.println("\nPID\tBurst Time\tPriority\tArrival Time\tCompletion Time\tWaiting Time\tTurnaround Time");
+        for (Process p : processes) {
+            System.out.println(p.pid + "\t\t" + p.burstTime + "\t\t" + p.priority + "\t\t" + p.arrivalTime + "\t\t" + p.completionTime + "\t\t\t" + p.waitingTime + "\t\t" + p.turnaroundTime);
+        }
+
+        System.out.println("\nAverage Waiting Time: " + (double) totalWaitingTime / n);
+        System.out.println("Average Turnaround Time: " + (double) totalTurnaroundTime / n);
+    }
+}
+
