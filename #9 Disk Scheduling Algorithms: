@@ -1,0 +1,155 @@
+// Write a program for Disk Scheduling Algorithms: SSTF, SCAN, C-Look considering the initial head position moving away from the spindle.
+
+#include <stdio.h>
+#include <stdlib.h>
+
+void SSTF(int requests[], int n, int head) {
+    int completed[n], total_movement = 0, current = head;
+    for (int i = 0; i < n; i++)
+        completed[i] = 0;
+
+    printf("\nSSTF Disk Scheduling:\n");
+    printf("Head movement: %d", current);
+
+    for (int i = 0; i < n; i++) {
+        int min_dist = 9999, index = -1;
+        for (int j = 0; j < n; j++) {
+            if (!completed[j]) {
+                int distance = abs(requests[j] - current);
+                if (distance < min_dist) {
+                    min_dist = distance;
+                    index = j;
+                }
+            }
+        }
+        total_movement += min_dist;
+        current = requests[index];
+        completed[index] = 1;
+        printf(" -> %d", current);
+    }
+    printf("\nTotal Head Movement: %d\n", total_movement);
+}
+
+void SCAN(int requests[], int n, int head, int disk_size) {
+    int total_movement = 0, current = head;
+    int i, j;
+
+    // Sort requests
+    for (i = 0; i < n; i++) {
+        for (j = i + 1; j < n; j++) {
+            if (requests[i] > requests[j]) {
+                int temp = requests[i];
+                requests[i] = requests[j];
+                requests[j] = temp;
+            }
+        }
+    }
+
+    // Find the point where head is located
+    int index;
+    for (i = 0; i < n; i++) {
+        if (requests[i] > head) {
+            index = i;
+            break;
+        }
+    }
+
+    printf("\nSCAN Disk Scheduling (moving towards end):\n");
+    printf("Head movement: %d", current);
+
+    // Move towards end (right side)
+    for (i = index; i < n; i++) {
+        printf(" -> %d", requests[i]);
+        total_movement += abs(current - requests[i]);
+        current = requests[i];
+    }
+
+    // Move to the end of the disk
+    printf(" -> %d", disk_size - 1);
+    total_movement += abs(current - (disk_size - 1));
+    current = disk_size - 1;
+
+    // Move towards start (left side)
+    for (i = index - 1; i >= 0; i--) {
+        printf(" -> %d", requests[i]);
+        total_movement += abs(current - requests[i]);
+        current = requests[i];
+    }
+
+    printf("\nTotal Head Movement: %d\n", total_movement);
+}
+
+void C_LOOK(int requests[], int n, int head, int disk_size) {
+    int total_movement = 0, current = head;
+    int i, j;
+
+    // Sort requests
+    for (i = 0; i < n; i++) {
+        for (j = i + 1; j < n; j++) {
+            if (requests[i] > requests[j]) {
+                int temp = requests[i];
+                requests[i] = requests[j];
+                requests[j] = temp;
+            }
+        }
+    }
+
+    // Find the point where head is located
+    int index;
+    for (i = 0; i < n; i++) {
+        if (requests[i] > head) {
+            index = i;
+            break;
+        }
+    }
+
+    printf("\nC-LOOK Disk Scheduling (moving towards end):\n");
+    printf("Head movement: %d", current);
+
+    // Move towards end (right side)
+    for (i = index; i < n; i++) {
+        printf(" -> %d", requests[i]);
+        total_movement += abs(current - requests[i]);
+        current = requests[i];
+    }
+
+    // Jump to the first request in the list
+    printf(" -> %d", requests[0]);
+    total_movement += abs(current - requests[0]);
+    current = requests[0];
+
+    // Move towards the end again
+    for (i = 0; i < index; i++) {
+        printf(" -> %d", requests[i]);
+        total_movement += abs(current - requests[i]);
+        current = requests[i];
+    }
+
+    printf("\nTotal Head Movement: %d\n", total_movement);
+}
+
+int main() {
+    int n, head, disk_size;
+
+    printf("Enter the number of disk requests: ");
+    scanf("%d", &n);
+
+    int requests[n];
+    printf("Enter the disk requests:\n");
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &requests[i]);
+    }
+
+    printf("Enter the initial head position: ");
+    scanf("%d", &head);
+
+    printf("Enter the disk size (max cylinder number): ");
+    scanf("%d", &disk_size);
+
+    SSTF(requests, n, head);
+    SCAN(requests, n, head, disk_size);
+    C_LOOK(requests, n, head, disk_size);
+
+    return 0;
+}
+
