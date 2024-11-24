@@ -1,0 +1,126 @@
+//Implementation of Classical Process Synchronization problems using Threads and Semaphore, Mutex. Application to demonstrate: producer- consumer problem
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+
+#define MAX_ITEMS 1000  // Define how many items producers/consumers will process
+int *buffer;  
+int bufferSize;
+int in = 0;  // Index for the next item produced
+int out = 0; // Index for the next item consumed
+
+sem_t empty; // Semaphore to count empty slots in buffer
+sem_t full;  // Semaphore to count full slots in buffer
+pthread_mutex_t mutex;  // Mutex lock for accessing the buffer
+
+void *producer(void *param) {
+    int item;
+    int id = *(int *)param;
+    for(int i = 0; i < MAX_ITEMS; i++) {
+        item = rand() % 100;  // Generate a random item
+
+        sem_wait(&empty);  // Wait for empty slot
+        pthread_mutex_lock(&mutex);  // Lock the buffer access
+        
+        // Produce an item
+        buffer[in] = item;
+        printf("Producer %d: Insert Item %d at %d\n", id, item, in);
+        in = (in + 1) % bufferSize;  // Circular increment of the index
+
+        pthread_mutex_unlock(&mutex);  // Unlock the buffer access
+        sem_post(&full);  // Signal that a full slot is available
+
+        sleep(1);  // Sleep to simulate time taken to produce
+    }
+    pthread_exit(0);
+}
+
+void *consumer(void *param) {
+    int item;
+    int id = *(int *)param;
+    for(int i = 0; i < MAX_ITEMS; i++) {
+        sem_wait(&full);  // Wait for full slot
+        pthread_mutex_lock(&mutex);  // Lock the buffer access
+
+        // Consume an item
+        item = buffer[out];
+        printf("Consumer %d: Remove Item %d from %d\n", id, item, out);
+        out = (out + 1) % bufferSize;  // Circular increment of the index
+
+        pthread_mutex_unlock(&mutex);  // Unlock the buffer access
+        sem_post(&empty);  // Signal that an empty slot is available
+
+        sleep(1);  // Sleep to simulate time taken to consume
+    }
+    pthread_exit(0);
+}
+
+int main() {
+    int numProducers, numConsumers;
+
+    // Seed the random number generator
+    srand(time(NULL));
+
+    printf("Enter the size of the buffer: ");
+    scanf("%d", &bufferSize);
+    buffer = (int *)malloc(bufferSize * sizeof(int));
+
+    printf("Enter the number of producers: ");
+    scanf("%d", &numProducers);
+
+    printf("Enter the number of consumers: ");
+    scanf("%d", &numConsumers);
+
+    // Initialize semaphores and mutex
+    sem_init(&empty, 0, bufferSize);  // Initially, buffer has bufferSize empty slots
+    sem_init(&full, 0, 0);  // Initially, buffer has no full slots
+    pthread_mutex_init(&mutex, NULL);  // Initialize mutex lock
+
+    pthread_t producers[numProducers], consumers[numConsumers];
+    int producerIds[numProducers], consumerIds[numConsumers];
+
+    // Create producer threads
+    for (int i = 0; i < numProducers; i++) {
+        producerIds[i] = i + 1;  // Assign a unique ID to each producer
+        if (pthread_create(&producers[i], NULL, producer, &producerIds[i]) != 0) {
+            perror("Failed to create producer thread");
+            exit(1);
+        }
+    }
+
+    // Create consumer threads
+    for (int i = 0; i < numConsumers; i++) {
+        consumerIds[i] = i + 1;  // Assign a unique ID to each consumer
+        if (pthread_create(&consumers[i], NULL, consumer, &consumerIds[i]) != 0) {
+            perror("Failed to create consumer thread");
+            exit(1);
+        }
+    }
+
+    // Join producer threads
+    for (int i = 0; i < numProducers; i++) {
+        if (pthread_join(producers[i], NULL) != 0) {
+            perror("Failed to join producer thread");
+            exit(1);
+        }
+    }
+
+    // Join consumer threads
+    for (int i = 0; i < numConsumers; i++) {
+        if (pthread_join(consumers[i], NULL) != 0) {
+            perror("Failed to join consumer thread");
+            exit(1);
+        }
+    }
+
+    // Cleanup
+    sem_destroy(&empty);
+    sem_destroy(&full);
+    pthread_mutex_destroy(&mutex);
+    free(buffer);
+
+    return 0;
+}
+
